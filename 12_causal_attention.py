@@ -37,5 +37,5 @@ print(masked_simple_norm)
 mask = torch.triu(torch.ones(context_length, context_length), diagonal=1)
 masked = attn_scores.masked_fill(mask.bool(), -torch.inf)
 
-attn_weights = torch.softmax(masked / keys.shape[-1] ** 0.5, dim=1)
+attn_weights = torch.softmax(masked / keys.shape[-1] ** 0.5, dim=-1)
 print(attn_weights)
