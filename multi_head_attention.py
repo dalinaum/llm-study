@@ -47,7 +47,7 @@ class MultiHeadAttention(nn.Module):
         # -> (b, num_heads, num_tokens, num_tokens)
         attn_scores = queries @ keys.transpose(2, 3)
         
-        mask_bool = self.mask.bool()[:num_tokens][:num_tokens]
+        mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
 
         attn_scores.masked_fill_(mask_bool, -torch.inf)
         # -> (b, num_heads, num_tokens, num_tokens)
