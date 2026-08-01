@@ -29,6 +29,8 @@ context_length = attn_scores.shape[0]
 mask = torch.triu(torch.ones(context_length, context_length), diagonal=1)
 masked = attn_scores.masked_fill(mask.bool(), -torch.inf)
 
+# 내적의 분산은 d_k(키 차원)에 비례해 커지므로 표준편차인
+# √d_k로 나눠 분산 1을 유지한다 (스케일드 닷 프로덕트)
 attn_weights = torch.softmax(masked / keys.shape[-1] ** 0.5, dim=-1)
 
 torch.manual_seed(123)
