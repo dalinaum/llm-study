@@ -35,6 +35,9 @@ attn_scores_2 = query_2 @ keys.T
 print(attn_scores_2)
 
 d_k = keys.shape[-1]
+# 내적은 d_k개 곱의 합이라 분산이 d_k에 비례해 커진다 (표준편차는 √d_k).
+# √d_k로 나눠 분산을 1로 되돌려, 점수가 커져 softmax가 원-핫으로 쏠리고
+# 그래디언트가 사라지는 것을 막는다 → 스케일드 닷 프로덕트 어텐션
 attn_weights_2 = torch.softmax(attn_scores_2 / d_k ** 0.5, dim=-1)
 print(attn_weights_2)
 

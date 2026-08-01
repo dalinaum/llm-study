@@ -51,6 +51,8 @@ class MultiHeadAttention(nn.Module):
 
         attn_scores.masked_fill_(mask_bool, -torch.inf)
         # -> (b, num_heads, num_tokens, num_tokens)
+        # 내적의 분산은 head_dim에 비례해 커지므로 표준편차인
+        # √head_dim으로 나눠 분산 1을 유지한다 (스케일드 닷 프로덕트)
         attn_weights = torch.softmax(
             attn_scores / keys.shape[-1] ** 0.5, dim=-1
         )
