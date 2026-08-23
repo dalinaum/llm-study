@@ -5,6 +5,8 @@ from generate_text_simple import generate_text_simple
 from gpt_dataset_v1 import create_dataloader_v1
 from gpt_model import GPTModel
 from loss_util import calc_loss_loader
+from token_util import text_to_token_ids, token_ids_to_text
+from train_util import train_model_simple
 
 
 GPT_CONFIG_124M = {
@@ -21,16 +23,6 @@ torch.manual_seed(123)
 model = GPTModel(GPT_CONFIG_124M)
 model.eval()
 
-
-def text_to_token_ids(text, tokenizer):
-    encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
-    encoded_tensor = torch.tensor(encoded).unsqueeze(0)
-    return encoded_tensor
-
-
-def token_ids_to_text(token_ids, tokenizer):
-    flat = token_ids.squeeze(0)
-    return tokenizer.decode(flat.tolist())
 
 start_context = "Every effort moves you"
 tokenizer = tiktoken.get_encoding("gpt2")
@@ -137,10 +129,30 @@ for x, y in val_loader:
 
 
 torch.manual_seed(123)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device("cpu")
 model.to(device)
 with torch.no_grad():
     train_loss = calc_loss_loader(train_loader, model, device)
     val_loss = calc_loss_loader(val_loader, model, device)
 print("훈련 손실:", train_loss)
 print("검증 손실:", val_loss)
+
+torch.manual_seed(123)
+model = GPTModel(GPT_CONFIG_124M)
+device = "cpu"
+model.to(device)
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=0.0004, weight_decay=0.1
+)
+num_epochs = 100
+train_losses, val_losses, tokens_seen = train_model_simple(
+    model, train_loader, val_loader, optimizer, device,
+    num_epochs=num_epochs, eval_freq=5, eval_iter=5,
+    start_context="Every effort moves you", tokenizer=tokenizer
+)
