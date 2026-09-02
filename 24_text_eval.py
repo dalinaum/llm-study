@@ -173,7 +173,23 @@ def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     ax2.plot(tokens_seen, train_losses, alpha=0)
     ax2.set_xlabel("Tokens seen")
     fig.tight_layout()
-    plt.show()
+    # 그래프 창을 띄우되, 창이 닫힐 때까지 기다리지 않고 다음 코드를 실행합니다.
+    plt.show(block=False)
     
 epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
 plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
+
+model.to("cpu")
+model.eval()
+
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(start_context, tokenizer),
+    max_new_tokens=25,
+    context_size=GPT_CONFIG_124M["context_length"]
+)
+
+print("출력 테스트:\n", token_ids_to_text(token_ids, tokenizer))
+
+# 모든 작업이 끝난 뒤, 그래프 창을 닫을 때까지 프로그램이 종료되지 않게 합니다.
+plt.show()
