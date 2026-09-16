@@ -76,6 +76,7 @@ val_loader = create_dataloader_v1(
 
 torch.manual_seed(123)
 model = GPTModel(GPT_CONFIG_124M)
+# 맥의 MPS 구현 버그 때문에 자동 감지(cuda/mps) 대신 CPU를 고정합니다.
 device = "cpu"
 model.to(device)
 optimizer = torch.optim.AdamW(
