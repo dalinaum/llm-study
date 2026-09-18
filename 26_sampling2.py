@@ -76,8 +76,13 @@ val_loader = create_dataloader_v1(
 
 torch.manual_seed(123)
 model = GPTModel(GPT_CONFIG_124M)
-# 맥의 MPS 구현 버그 때문에 자동 감지(cuda/mps) 대신 CPU를 고정합니다.
-device = "cpu"
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+# 애플 MPS 구현 버그 때문에 mps 분기를 잠시 막아 둡니다. 고쳐지면 주석을 풀면 됩니다.
+# elif torch.backends.mps.is_available():
+#     device = torch.device("mps")
+else:
+    device = torch.device("cpu")
 model.to(device)
 optimizer = torch.optim.AdamW(
     model.parameters(),
@@ -103,3 +108,5 @@ token_ids = generate(
     temperature=1.4
 )
 print("출력 테스트:\n", token_ids_to_text(token_ids, tokenizer))
+
+torch.save(model.state_dict(), "model.pth")
