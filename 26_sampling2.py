@@ -109,4 +109,11 @@ token_ids = generate(
 )
 print("출력 테스트:\n", token_ids_to_text(token_ids, tokenizer))
 
-torch.save(model.state_dict(), "model.pth")
+# torch.save(model.state_dict(), "model.pth")
+
+torch.save({
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+    },
+    "model_and_optimizer.pth"
+)
