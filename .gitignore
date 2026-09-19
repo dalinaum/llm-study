@@ -11,3 +11,6 @@ wheels/
 
 # PyTorch checkpoints (1GB+)
 *.pth
+
+# Downloaded GPT-2 weights (475MB)
+gpt2/
