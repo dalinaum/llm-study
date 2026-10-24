@@ -1,0 +1,164 @@
+<div id="conv1d-kernel-window">
+  <div class="viz-controls">
+    <button type="button" class="btn" data-prev disabled>이전 위치</button>
+    <button type="button" class="btn btn-primary" data-next>한 칸 이동</button>
+    <span data-status aria-live="polite">위치 1 / 2 · 토큰 1–2</span>
+  </div>
+  <div class="text-small text-muted conv-settings">커널 크기 2 · 입력 특성 2 · 필터 1개 · 이동 간격 1 · 패딩 0 · 편향 0</div>
+  <svg class="conv-diagram" role="img" aria-label="특성이 두 개인 토큰 위에서 크기 2인 커널이 이동하며 출력 300과 500을 계산하는 모습"></svg>
+</div>
+<style>
+  #conv1d-kernel-window { color: var(--foreground); }
+  #conv1d-kernel-window .conv-settings { margin: 12px 0 4px; }
+  #conv1d-kernel-window .conv-diagram { display: block; width: 100%; height: 470px; overflow: visible; }
+  #conv1d-kernel-window .conv-diagram text { fill: var(--foreground); font-family: inherit; font-weight: 400; }
+  #conv1d-kernel-window .conv-diagram .section-label { font-weight: 500; }
+  #conv1d-kernel-window .conv-diagram .value-cell { fill: var(--muted); }
+  #conv1d-kernel-window .conv-diagram .active-input { fill: var(--viz-series-1); fill-opacity: 0.15; }
+  #conv1d-kernel-window .conv-diagram .kernel-area { fill: var(--viz-series-1); fill-opacity: 0.09; stroke: var(--border); stroke-width: 1; }
+  #conv1d-kernel-window .conv-diagram .product-cell { fill: var(--viz-series-1); fill-opacity: 0.15; }
+  #conv1d-kernel-window .conv-diagram .wire { fill: none; stroke: var(--border); stroke-width: 1.5; }
+  #conv1d-kernel-window .conv-diagram .result-cell { fill: var(--viz-series-1); fill-opacity: 0.15; }
+  #conv1d-kernel-window .conv-diagram .moving { transition: transform 320ms ease; }
+  @media (prefers-reduced-motion: reduce) {
+    #conv1d-kernel-window .conv-diagram .moving { transition: none; }
+  }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('conv1d-kernel-window');
+  const svg = root.querySelector('.conv-diagram');
+  const previous = root.querySelector('[data-prev]');
+  const next = root.querySelector('[data-next]');
+  const status = root.querySelector('[data-status]');
+  const input = [[1, 2], [3, 4], [5, 6]];
+  const kernel = [[10, 20], [30, 40]];
+  const ns = 'http://www.w3.org/2000/svg';
+  let step = 0;
+  let geometry;
+  let kernelGroup;
+  let productsGroup;
+  let inputWindow;
+  let incoming;
+  let outgoing;
+  let result;
+  let resultLabel;
+  let description;
+  let products = [];
+  let inputCells = [];
+
+  function add(tag, attrs = {}, text = null, parent = svg) {
+    const node = document.createElementNS(ns, tag);
+    for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, String(value));
+    if (text !== null) node.textContent = String(text);
+    parent.appendChild(node);
+    return node;
+  }
+
+  function label(x, y, text, cls = '', parent = svg, anchor = 'middle') {
+    return add('text', {x, y, 'text-anchor': anchor, 'dominant-baseline': 'middle', class: cls}, text, parent);
+  }
+
+  function value(x, y, number, cls, parent = svg) {
+    add('rect', {x: x - 27, y: y - 15, width: 54, height: 30, rx: 4, class: cls}, null, parent);
+    return label(x, y + 1, number, 'tabular-nums', parent);
+  }
+
+  function layout() {
+    const width = Math.round(root.getBoundingClientRect().width);
+    if (width < 1) return;
+    const left = 62;
+    const pitch = (width - left - 10) / 3;
+    const center = index => left + pitch * (index + 0.5);
+    geometry = {width, pitch, center};
+    svg.setAttribute('viewBox', `0 0 ${width} 470`);
+    svg.replaceChildren();
+    add('title', {}, '커널 크기 2 · 입력 특성 2');
+    description = add('desc');
+
+    label(4, 16, '입력', 'section-label', svg, 'start');
+    label(4, 61, '특성 1', 'text-small', svg, 'start');
+    label(4, 97, '특성 2', 'text-small', svg, 'start');
+
+    inputWindow = add('g', {class: 'moving'});
+    add('rect', {x: center(0) - 32, y: 37, width: pitch + 64, height: 78, rx: 5, class: 'active-input'}, null, inputWindow);
+
+    inputCells = [];
+    input.forEach((token, i) => {
+      label(center(i), 16, `토큰 ${i + 1}`);
+      inputCells[i] = [];
+      token.forEach((number, channel) => {
+        const cell = add('g');
+        value(center(i), 61 + channel * 36, number, 'value-cell', cell);
+        inputCells[i].push(cell);
+      });
+    });
+
+    incoming = add('g');
+    label(4, 144, '가중치', 'section-label', svg, 'start');
+    label(4, 190, '특성 1', 'text-small', svg, 'start');
+    label(4, 226, '특성 2', 'text-small', svg, 'start');
+    kernelGroup = add('g', {class: 'moving'});
+    add('rect', {x: center(0) - 32, y: 139, width: pitch + 64, height: 106, rx: 5, class: 'kernel-area'}, null, kernelGroup);
+    kernel.forEach((weights, offset) => {
+      label(center(offset), 158, offset === 0 ? '첫째 토큰용' : '둘째 토큰용', 'text-small', kernelGroup);
+      weights.forEach((number, channel) => label(center(offset), 190 + channel * 36, number, 'tabular-nums', kernelGroup));
+    });
+
+    label(4, 278, '곱한 값', 'section-label', svg, 'start');
+    label(4, 312, '특성 1', 'text-small', svg, 'start');
+    label(4, 348, '특성 2', 'text-small', svg, 'start');
+    productsGroup = add('g', {class: 'moving'});
+    products = [];
+    kernel.forEach((weights, offset) => {
+      add('path', {d: `M ${center(offset)} 247 L ${center(offset)} 285`, class: 'wire'}, null, productsGroup);
+      label(center(offset), 269, '↓', '', productsGroup);
+      products[offset] = weights.map((_, channel) => value(center(offset), 312 + channel * 36, '', 'product-cell', productsGroup));
+    });
+    outgoing = add('path', {class: 'wire'});
+    add('rect', {x: width / 2 - 52, y: 418, width: 104, height: 42, rx: 5, class: 'result-cell'});
+    resultLabel = label(width / 2, 400, '');
+    result = label(width / 2, 440, '', 'section-label tabular-nums');
+    paint(false);
+  }
+
+  function paint(animate = true) {
+    if (!geometry) return;
+    const {width, pitch, center} = geometry;
+    [inputWindow, kernelGroup, productsGroup].forEach(group => {
+      group.style.transitionDuration = animate ? '' : '0ms';
+      group.style.transform = `translateX(${step * pitch}px)`;
+    });
+    inputCells.forEach((cells, i) => {
+      cells.forEach(cell => { cell.style.opacity = i >= step && i <= step + 1 ? '1' : '0.4'; });
+    });
+    incoming.replaceChildren();
+    for (let offset = 0; offset < 2; offset++) label(center(step + offset), 126, '×', '', incoming);
+    let sum = 0;
+    const contributions = [];
+    kernel.forEach((weights, offset) => weights.forEach((weight, channel) => {
+      const product = input[step + offset][channel] * weight;
+      products[offset][channel].textContent = String(product);
+      contributions.push(product);
+      sum += product;
+    }));
+    const x0 = center(step);
+    const x1 = center(step + 1);
+    outgoing.setAttribute('d', `M ${x0} 366 L ${x0} 380 L ${width / 2} 380 L ${width / 2} 387 M ${x1} 366 L ${x1} 380 L ${width / 2} 380`);
+    result.textContent = String(sum);
+    resultLabel.textContent = `합 · 출력 ${step + 1}`;
+    status.textContent = `위치 ${step + 1} / 2 · 토큰 ${step + 1}–${step + 2}`;
+    previous.disabled = step === 0;
+    next.disabled = step === input.length - kernel.length;
+    description.textContent = `토큰 ${step + 1}과 ${step + 2}에 가중치 10, 20, 30, 40을 적용합니다. 각 곱은 ${contributions.join(', ')}이며 합계는 ${sum}입니다. 커널이 이동해도 같은 가중치를 사용합니다.`;
+    svg.setAttribute('aria-label', description.textContent);
+    root.dataset.step = String(step);
+    root.dataset.output = String(sum);
+  }
+
+  previous.addEventListener('click', () => { step = Math.max(0, step - 1); paint(); });
+  next.addEventListener('click', () => { step = Math.min(input.length - kernel.length, step + 1); paint(); });
+  new ResizeObserver(layout).observe(root);
+  layout();
+})();
+</script>
