@@ -14,3 +14,6 @@ wheels/
 
 # Downloaded GPT-2 weights (475MB)
 gpt2/
+
+# Explanation artifacts (visualizations etc.)
+output/
