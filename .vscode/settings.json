@@ -1,0 +1,11 @@
+{
+  "code-runner.executorMap": {
+    "python": "uv run python"
+  },
+  "code-runner.runInTerminal": true,
+  "code-runner.fileDirectoryAsCwd": false,
+  "code-runner.ignoreSelection": true,
+  "code-runner.showRunIconInEditorTitleMenu": true,
+  "python.terminal.activateEnvironment": false,
+  "python.terminal.activateEnvInCurrentTerminal": false
+}
