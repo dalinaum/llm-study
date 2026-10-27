@@ -10,8 +10,11 @@ from loss_util import calc_loss_loader
 from token_util import text_to_token_ids, token_ids_to_text
 
 
+# settings, params = download_and_load_gpt2(
+#     model_size="124M", models_dir="gpt2"
+# )
 settings, params = download_and_load_gpt2(
-    model_size="124M", models_dir="gpt2"
+    model_size="1558M", models_dir="gpt2"
 )
 
 print("설정:", settings)
@@ -35,7 +38,8 @@ GPT_CONFIG_124M = {
     "qkv_bias": False #쿼리, 키, 값 계산을 위한 편향
 }
 
-model_name = "gpt2-small (124M)"
+# model_name = "gpt2-small (124M)"
+model_name = "gpt2-xl (1558M)"
 NEW_CONFIG = GPT_CONFIG_124M.copy()
 NEW_CONFIG.update(model_configs[model_name])
 NEW_CONFIG.update({"context_length": 1024})
