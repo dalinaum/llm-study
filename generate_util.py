@@ -1,8 +1,9 @@
 import torch
 
 
-def generate(model, idx, max_new_tokens, context_size,
-             temperature=0.0, top_k=None, eos_id=None):
+def generate(
+    model, idx, max_new_tokens, context_size, temperature=0.0, top_k=None, eos_id=None
+):
     for _ in range(max_new_tokens):
         idx_cond = idx[:, -context_size:]
         with torch.no_grad():
@@ -12,9 +13,7 @@ def generate(model, idx, max_new_tokens, context_size,
             top_logits, _ = torch.topk(logits, top_k)
             min_val = top_logits[:, -1]
             logits = torch.where(
-                logits < min_val,
-                torch.tensor(float('-inf')).to(logits.device),
-                logits
+                logits < min_val, torch.tensor(float("-inf")).to(logits.device), logits
             )
         if temperature > 0.0:
             logits = logits / temperature

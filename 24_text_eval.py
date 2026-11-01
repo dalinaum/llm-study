@@ -1,7 +1,7 @@
-from matplotlib import pyplot as plt
-from matplotlib.ticker import MaxNLocator
 import tiktoken
 import torch
+from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 from generate_text_simple import generate_text_simple
 from gpt_dataset_v1 import create_dataloader_v1
@@ -10,15 +10,14 @@ from loss_util import calc_loss_loader
 from token_util import text_to_token_ids, token_ids_to_text
 from train_util import train_model_simple
 
-
 GPT_CONFIG_124M = {
-    "vocab_size" : 50257, # 어휘 사전 크기
-    "context_length": 256, # 문맥 길이 - 1024에서 256으로 줄임
-    "emb_dim": 768, # 임베딩 차원
-    "n_heads": 12, # 어텐션 헤드 개수
-    "n_layers": 12, # 층 개수
-    "drop_rate": 0.1, # 드롭아웃 비율
-    "qkv_bias": False #쿼리, 키, 값 계산을 위한 편향
+    "vocab_size": 50257,  # 어휘 사전 크기
+    "context_length": 256,  # 문맥 길이 - 1024에서 256으로 줄임
+    "emb_dim": 768,  # 임베딩 차원
+    "n_heads": 12,  # 어텐션 헤드 개수
+    "n_layers": 12,  # 층 개수
+    "drop_rate": 0.1,  # 드롭아웃 비율
+    "qkv_bias": False,  # 쿼리, 키, 값 계산을 위한 편향
 }
 
 torch.manual_seed(123)
@@ -33,7 +32,7 @@ token_ids = generate_text_simple(
     model=model,
     idx=text_to_token_ids(start_context, tokenizer),
     max_new_tokens=10,
-    context_size=GPT_CONFIG_124M["context_length"]
+    context_size=GPT_CONFIG_124M["context_length"],
 )
 print("출력 테스트:\n", token_ids_to_text(token_ids, tokenizer))
 
@@ -41,11 +40,19 @@ torch.manual_seed(123)
 model = GPTModel(GPT_CONFIG_124M)
 model.eval()
 
-inputs = torch.tensor([[16833, 3626, 6100],  # ["every effort moves",
-                       [40, 1107, 588]])      #  "I really like"]
+inputs = torch.tensor(
+    [
+        [16833, 3626, 6100],  # ["every effort moves",
+        [40, 1107, 588],
+    ]
+)  #  "I really like"]
 
-targets = torch.tensor([[3626, 6100, 345],      # ["effort moves you",
-                        [1107, 588, 11311]])    #  " really like chocolate"]
+targets = torch.tensor(
+    [
+        [3626, 6100, 345],  # ["effort moves you",
+        [1107, 588, 11311],
+    ]
+)  #  " really like chocolate"]
 
 with torch.no_grad():
     logits = model(inputs)
@@ -108,7 +115,7 @@ train_loader = create_dataloader_v1(
     stride=GPT_CONFIG_124M["context_length"],
     drop_last=True,
     shuffle=True,
-    num_workers=0
+    num_workers=0,
 )
 
 val_loader = create_dataloader_v1(
@@ -118,7 +125,7 @@ val_loader = create_dataloader_v1(
     stride=GPT_CONFIG_124M["context_length"],
     drop_last=False,
     shuffle=False,
-    num_workers=0
+    num_workers=0,
 )
 
 print("훈련 데이터 로더:")
@@ -148,23 +155,26 @@ torch.manual_seed(123)
 model = GPTModel(GPT_CONFIG_124M)
 device = "cpu"
 model.to(device)
-optimizer = torch.optim.AdamW(
-    model.parameters(),
-    lr=0.0004, weight_decay=0.1
-)
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)
 num_epochs = 10
 train_losses, val_losses, tokens_seen = train_model_simple(
-    model, train_loader, val_loader, optimizer, device,
-    num_epochs=num_epochs, eval_freq=5, eval_iter=5,
-    start_context="Every effort moves you", tokenizer=tokenizer
+    model,
+    train_loader,
+    val_loader,
+    optimizer,
+    device,
+    num_epochs=num_epochs,
+    eval_freq=5,
+    eval_iter=5,
+    start_context="Every effort moves you",
+    tokenizer=tokenizer,
 )
+
 
 def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     fig, ax1 = plt.subplots(figsize=(5, 3))
     ax1.plot(epochs_seen, train_losses, label="Training loss")
-    ax1.plot(
-        epochs_seen, val_losses, linestyle="-.", label="Validation loss"
-    )
+    ax1.plot(epochs_seen, val_losses, linestyle="-.", label="Validation loss")
     ax1.set_xlabel("Epochs")
     ax1.set_ylabel("Loss")
     ax1.legend(loc="upper right")
@@ -175,7 +185,8 @@ def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     fig.tight_layout()
     # 그래프 창을 띄우되, 창이 닫힐 때까지 기다리지 않고 다음 코드를 실행합니다.
     plt.show(block=False)
-    
+
+
 epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
 plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
 
@@ -186,7 +197,7 @@ token_ids = generate_text_simple(
     model=model,
     idx=text_to_token_ids(start_context, tokenizer),
     max_new_tokens=25,
-    context_size=GPT_CONFIG_124M["context_length"]
+    context_size=GPT_CONFIG_124M["context_length"],
 )
 
 print("출력 테스트:\n", token_ids_to_text(token_ids, tokenizer))

@@ -1,7 +1,8 @@
-from gelu import GELU
 import matplotlib.pyplot as plt
 import torch
-import torch.nn as nn
+from torch import nn
+
+from gelu import GELU
 
 gelu, relu = GELU(), nn.ReLU()
 

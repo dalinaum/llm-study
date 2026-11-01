@@ -4,13 +4,13 @@ import torch
 from gpt_model import GPTModel
 
 GPT_CONFIG_124M = {
-    "vocab_size" : 50257, # 어휘 사전 크기
-    "context_length": 1024, # 문맥 길이
-    "emb_dim": 768, # 임베딩 차원
-    "n_heads": 12, # 어텐션 헤드 개수
-    "n_layers": 12, # 층 개수
-    "drop_rate": 0.1, # 드롭아웃 비율
-    "qkv_bias": False #쿼리, 키, 값 계산을 위한 편향
+    "vocab_size": 50257,  # 어휘 사전 크기
+    "context_length": 1024,  # 문맥 길이
+    "emb_dim": 768,  # 임베딩 차원
+    "n_heads": 12,  # 어텐션 헤드 개수
+    "n_layers": 12,  # 층 개수
+    "drop_rate": 0.1,  # 드롭아웃 비율
+    "qkv_bias": False,  # 쿼리, 키, 값 계산을 위한 편향
 }
 
 tokenizer = tiktoken.get_encoding("gpt2")
@@ -36,10 +36,7 @@ print(f"총 파라미터 개수: {total_params:,}")
 print("토큰 임베딩 총 크기:", model.tok_emb.weight.shape)
 print("출력 총 크기:", model.out_head.weight.shape)
 
-total_params_gpt2 = (
-    total_params - sum(p.numel()
-    for p in model.out_head.parameters())
-)
+total_params_gpt2 = total_params - sum(p.numel() for p in model.out_head.parameters())
 print(f"가중치 묶기를 고려한 훈련 가능한 파라미터 개수: {total_params_gpt2:,}")
 
 for i, block in enumerate(model.trf_blocks):
@@ -57,13 +54,13 @@ print(f"모델에 필요한 메모리 공간: {total_size_mb:.2f} MB")
 print("=" * 50)
 
 GPT_CONFIG_355M = {
-    "vocab_size" : 50257, # 어휘 사전 크기
-    "context_length": 1024, # 문맥 길이
-    "emb_dim": 1024, # 임베딩 차원
-    "n_heads": 16, # 어텐션 헤드 개수
-    "n_layers": 24, # 층 개수
-    "drop_rate": 0.1, # 드롭아웃 비율
-    "qkv_bias": False #쿼리, 키, 값 계산을 위한 편향
+    "vocab_size": 50257,  # 어휘 사전 크기
+    "context_length": 1024,  # 문맥 길이
+    "emb_dim": 1024,  # 임베딩 차원
+    "n_heads": 16,  # 어텐션 헤드 개수
+    "n_layers": 24,  # 층 개수
+    "drop_rate": 0.1,  # 드롭아웃 비율
+    "qkv_bias": False,  # 쿼리, 키, 값 계산을 위한 편향
 }
 
 torch.manual_seed(123)
@@ -75,10 +72,7 @@ print(f"총 파라미터 개수: {total_params:,}")
 print("토큰 임베딩 총 크기:", model.tok_emb.weight.shape)
 print("출력 총 크기:", model.out_head.weight.shape)
 
-total_params_gpt2 = (
-    total_params - sum(p.numel()
-    for p in model.out_head.parameters())
-)
+total_params_gpt2 = total_params - sum(p.numel() for p in model.out_head.parameters())
 print(f"가중치 묶기를 고려한 훈련 가능한 파라미터 개수: {total_params_gpt2:,}")
 total_size_bytes = total_params * 4
 total_size_mb = total_size_bytes / (1024 * 1024)
@@ -87,13 +81,13 @@ print(f"모델에 필요한 메모리 공간: {total_size_mb:.2f} MB")
 print("=" * 50)
 
 GPT_CONFIG_774M = {
-    "vocab_size" : 50257, # 어휘 사전 크기
-    "context_length": 1024, # 문맥 길이
-    "emb_dim": 1280, # 임베딩 차원
-    "n_heads": 20, # 어텐션 헤드 개수
-    "n_layers": 36, # 층 개수
-    "drop_rate": 0.1, # 드롭아웃 비율
-    "qkv_bias": False #쿼리, 키, 값 계산을 위한 편향
+    "vocab_size": 50257,  # 어휘 사전 크기
+    "context_length": 1024,  # 문맥 길이
+    "emb_dim": 1280,  # 임베딩 차원
+    "n_heads": 20,  # 어텐션 헤드 개수
+    "n_layers": 36,  # 층 개수
+    "drop_rate": 0.1,  # 드롭아웃 비율
+    "qkv_bias": False,  # 쿼리, 키, 값 계산을 위한 편향
 }
 
 torch.manual_seed(123)
@@ -105,10 +99,7 @@ print(f"총 파라미터 개수: {total_params:,}")
 print("토큰 임베딩 총 크기:", model.tok_emb.weight.shape)
 print("출력 총 크기:", model.out_head.weight.shape)
 
-total_params_gpt2 = (
-    total_params - sum(p.numel()
-    for p in model.out_head.parameters())
-)
+total_params_gpt2 = total_params - sum(p.numel() for p in model.out_head.parameters())
 print(f"가중치 묶기를 고려한 훈련 가능한 파라미터 개수: {total_params_gpt2:,}")
 total_size_bytes = total_params * 4
 total_size_mb = total_size_bytes / (1024 * 1024)
@@ -117,13 +108,13 @@ print(f"모델에 필요한 메모리 공간: {total_size_mb:.2f} MB")
 print("=" * 50)
 
 GPT_CONFIG_1558M = {
-    "vocab_size" : 50257, # 어휘 사전 크기
-    "context_length": 1024, # 문맥 길이
-    "emb_dim": 1600, # 임베딩 차원
-    "n_heads": 25, # 어텐션 헤드 개수
-    "n_layers": 48, # 층 개수
-    "drop_rate": 0.1, # 드롭아웃 비율
-    "qkv_bias": False #쿼리, 키, 값 계산을 위한 편향
+    "vocab_size": 50257,  # 어휘 사전 크기
+    "context_length": 1024,  # 문맥 길이
+    "emb_dim": 1600,  # 임베딩 차원
+    "n_heads": 25,  # 어텐션 헤드 개수
+    "n_layers": 48,  # 층 개수
+    "drop_rate": 0.1,  # 드롭아웃 비율
+    "qkv_bias": False,  # 쿼리, 키, 값 계산을 위한 편향
 }
 
 torch.manual_seed(123)
@@ -135,10 +126,7 @@ print(f"총 파라미터 개수: {total_params:,}")
 print("토큰 임베딩 총 크기:", model.tok_emb.weight.shape)
 print("출력 총 크기:", model.out_head.weight.shape)
 
-total_params_gpt2 = (
-    total_params - sum(p.numel()
-    for p in model.out_head.parameters())
-)
+total_params_gpt2 = total_params - sum(p.numel() for p in model.out_head.parameters())
 print(f"가중치 묶기를 고려한 훈련 가능한 파라미터 개수: {total_params_gpt2:,}")
 total_size_bytes = total_params * 4
 total_size_mb = total_size_bytes / (1024 * 1024)

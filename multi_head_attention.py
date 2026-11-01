@@ -1,12 +1,11 @@
-from torch import nn
 import torch
+from torch import nn
+
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_in, d_out,
-                 context_length, dropout, num_heads, qkv_bias=False):
+    def __init__(self, d_in, d_out, context_length, dropout, num_heads, qkv_bias=False):
         super().__init__()
-        assert (d_out % num_heads == 0), \
-            "d_out은 num_heads로 나누어 떨어져야 합니다"
+        assert d_out % num_heads == 0, "d_out은 num_heads로 나누어 떨어져야 합니다"
 
         self.d_out = d_out
         self.num_heads = num_heads
@@ -17,9 +16,7 @@ class MultiHeadAttention(nn.Module):
         self.out_proj = nn.Linear(d_out, d_out)
         self.dropout = nn.Dropout(dropout)
         self.register_buffer(
-            "mask",
-            torch.triu(torch.ones(context_length, context_length),
-                       diagonal=1)
+            "mask", torch.triu(torch.ones(context_length, context_length), diagonal=1)
         )
 
     def forward(self, x):
@@ -33,9 +30,7 @@ class MultiHeadAttention(nn.Module):
 
         # (b, num_tokens, d_out) -> (b, num_tokens, num_heads, head_dim)
         keys = keys.view(b, num_tokens, self.num_heads, self.head_dim)
-        queries = queries.view(
-            b, num_tokens, self.num_heads, self.head_dim
-        )
+        queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)
         values = values.view(b, num_tokens, self.num_heads, self.head_dim)
 
         # (b, num_tokens, num_heads, head_dim) ->
@@ -46,16 +41,14 @@ class MultiHeadAttention(nn.Module):
 
         # -> (b, num_heads, num_tokens, num_tokens)
         attn_scores = queries @ keys.transpose(2, 3)
-        
+
         mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
 
         attn_scores.masked_fill_(mask_bool, -torch.inf)
         # -> (b, num_heads, num_tokens, num_tokens)
         # 내적의 분산은 head_dim에 비례해 커지므로 표준편차인
         # √head_dim으로 나눠 분산 1을 유지한다 (스케일드 닷 프로덕트)
-        attn_weights = torch.softmax(
-            attn_scores / keys.shape[-1] ** 0.5, dim=-1
-        )
+        attn_weights = torch.softmax(attn_scores / keys.shape[-1] ** 0.5, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
         # (b, num_heads, num_tokens, num_tokens) @
@@ -66,11 +59,10 @@ class MultiHeadAttention(nn.Module):
 
         # (b, num_tokens, num_heads, head_dim) ->
         # (b, num_tokens, d_out)
-        context_vec = context_vec.contiguous().view(
-            b, num_tokens, self.d_out 
-        )
+        context_vec = context_vec.contiguous().view(b, num_tokens, self.d_out)
         context_vec = self.out_proj(context_vec)
         return context_vec
+
 
 if __name__ == "__main__":
     a = torch.tensor(
@@ -79,13 +71,13 @@ if __name__ == "__main__":
                 [
                     [0.2745, 0.6584, 0.2775, 0.8573],
                     [0.8993, 0.0390, 0.9268, 0.7388],
-                    [0.7179, 0.7058, 0.9156, 0.4340]
+                    [0.7179, 0.7058, 0.9156, 0.4340],
                 ],
                 [
                     [0.0772, 0.3565, 0.1479, 0.5331],
                     [0.4066, 0.2318, 0.4545, 0.9737],
-                    [0.4606, 0.5159, 0.4220, 0.5786]
-                ]
+                    [0.4606, 0.5159, 0.4220, 0.5786],
+                ],
             ]
         ]
     )
@@ -101,12 +93,14 @@ if __name__ == "__main__":
     print(a @ a.transpose(2, 3))
 
     inputs = torch.tensor(
-        [[0.43, 0.15, 0.89], # Your (x^1)
-        [0.55, 0.87, 0.66], # journey (x^2)
-        [0.57, 0.85, 0.64], # starts (x^3)
-        [0.22, 0.58, 0.33], # with (x^4)
-        [0.77, 0.25, 0.10], # one (x^5)
-        [0.05, 0.80, 0.55]] # step (x^6)
+        [
+            [0.43, 0.15, 0.89],  # Your (x^1)
+            [0.55, 0.87, 0.66],  # journey (x^2)
+            [0.57, 0.85, 0.64],  # starts (x^3)
+            [0.22, 0.58, 0.33],  # with (x^4)
+            [0.77, 0.25, 0.10],  # one (x^5)
+            [0.05, 0.80, 0.55],
+        ]  # step (x^6)
     )
     batch = torch.stack([inputs, inputs], dim=0)
     torch.manual_seed(123)

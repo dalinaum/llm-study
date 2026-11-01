@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 
 torch.manual_seed(123)
 batch_example = torch.randn(2, 5)

@@ -1,5 +1,6 @@
-from layer_norm import LayerNorm
 import torch
+
+from layer_norm import LayerNorm
 
 ln = LayerNorm(emb_dim=5)
 torch.manual_seed(123)

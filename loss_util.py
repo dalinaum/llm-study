@@ -21,9 +21,7 @@ def calc_loss_loader(data_loader, model, device, num_batches=None):
         num_batches = min(num_batches, len(data_loader))
     for i, (input_batch, target_batch) in enumerate(data_loader):
         if i < num_batches:
-            loss = calc_loss_batch(
-                input_batch, target_batch, model, device
-            )
+            loss = calc_loss_batch(input_batch, target_batch, model, device)
             total_loss += loss.item()
         else:
             break

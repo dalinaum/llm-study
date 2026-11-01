@@ -1,5 +1,6 @@
-import torch.nn as nn
 import torch
+from torch import nn
+
 
 class SelfAttention_v1(nn.Module):
     def __init__(self, d_in, d_out):
@@ -12,24 +13,25 @@ class SelfAttention_v1(nn.Module):
         keys = x @ self.W_key
         queries = x @ self.W_query
         values = x @ self.W_value
-        attn_scores = queries @ keys.T # omega
+        attn_scores = queries @ keys.T  # omega
         # 내적의 분산은 d_k(키 차원)에 비례해 커지므로 표준편차인
         # √d_k로 나눠 분산 1을 유지한다 (스케일드 닷 프로덕트)
-        attn_weights = torch.softmax(
-            attn_scores / keys.shape[-1] ** 0.5, dim=-1
-        )
+        attn_weights = torch.softmax(attn_scores / keys.shape[-1] ** 0.5, dim=-1)
         context_vec = attn_weights @ values
         return context_vec
-    
+
+
 if __name__ == "__main__":
     torch.manual_seed(123)
     inputs = torch.tensor(
-        [[0.43, 0.15, 0.89], # Your (x^1)
-        [0.55, 0.87, 0.66], # journey (x^2)
-        [0.57, 0.85, 0.64], # starts (x^3)
-        [0.22, 0.58, 0.33], # with (x^4)
-        [0.77, 0.25, 0.10], # one (x^5)
-        [0.05, 0.80, 0.55]] # step (x^6)
+        [
+            [0.43, 0.15, 0.89],  # Your (x^1)
+            [0.55, 0.87, 0.66],  # journey (x^2)
+            [0.57, 0.85, 0.64],  # starts (x^3)
+            [0.22, 0.58, 0.33],  # with (x^4)
+            [0.77, 0.25, 0.10],  # one (x^5)
+            [0.05, 0.80, 0.55],
+        ]  # step (x^6)
     )
     d_in = inputs.shape[1]
     d_out = 2
