@@ -17,7 +17,7 @@ from token_util import text_to_token_ids, token_ids_to_text
 url = "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip"
 zip_path = "sms_spam_collections.zip"
 extracted_path = "sms_spam_collection"
-data_file_path = Path(extracted_path) / "SMSSPamCollection.tsv"
+data_file_path = Path(extracted_path) / "SMSSpamCollection.tsv"
 
 
 def download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path):
@@ -31,7 +31,7 @@ def download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path):
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(extracted_path)
 
-    original_file_path = Path(extracted_path) / "SMSSPamCollection"
+    original_file_path = Path(extracted_path) / "SMSSpamCollection"
     os.rename(original_file_path, data_file_path)
     print(f"파일이 다운로드 되어 {data_file_path}에 저장되었습니다.")
 
@@ -205,3 +205,45 @@ token_ids = generate_text_simple(
     context_size=BASE_CONFIG["context_length"],
 )
 print(token_ids_to_text(token_ids, tokenizer))
+
+print(model)
+
+for param in model.parameters():
+    param.requires_grad = False
+
+torch.manual_seed(123)
+num_classes = 2
+model.out_head = torch.nn.Linear(
+    in_features=BASE_CONFIG["emb_dim"], out_features=num_classes
+)
+
+for param in model.trf_blocks[-1].parameters():
+    param.requires_grad = True
+
+for param in model.final_norm.parameters():
+    param.requires_grad = True
+
+inputs = tokenizer.encode("Do you have time")
+inputs = torch.tensor(inputs).unsqueeze(0)
+print("입력:", inputs)
+print("입력 차원:", inputs.shape)
+
+with torch.no_grad():
+    outputs = model(inputs)
+print("출력:\n", outputs)
+print("출력 텐서:", outputs.shape)
+
+print("마지막 출력 토큰:", outputs[:, -1, :])
+
+probas = torch.softmax(outputs[:, -1, :], dim=-1)
+print("확률:", probas)
+label = torch.argmax(probas, dim=-1)
+print("클래스 레이블:", label.item())
+
+# 소프트 맥스는 안 써도 됨
+logits = outputs[:, -1, :]
+label = torch.argmax(logits, dim=-1)
+print("클래스 레이블:", label.item())
+
+
+# 연습문제 6.2와 6.3도 해야함.
