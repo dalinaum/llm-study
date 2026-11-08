@@ -95,6 +95,31 @@ class SpamDataset(Dataset):
         return max_length
 
 
+def calc_accuracy_loader(data_loader, model, device, num_batches=None):
+    model.eval()
+    correct_predictions, num_examples = 0, 0
+
+    if num_batches is None:
+        num_batches = len(data_loader)
+    else:
+        num_batches = min(num_batches, len(data_loader))
+    for i, (input_batch, target_batch) in enumerate(data_loader):
+        if i < num_batches:
+            input_batch = input_batch.to(device)
+            target_batch = target_batch.to(device)
+
+            with torch.no_grad():
+                logits = model(input_batch)[:, -1, :]
+            predicted_labels = torch.argmax(logits, dim=-1)
+
+            num_examples += predicted_labels.shape[0]
+            correct_predictions += (predicted_labels == target_batch).sum().item()
+        else:
+            break
+
+    return correct_predictions / num_examples
+
+
 download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path)
 df = pd.read_csv(data_file_path, sep="\t", header=None, names=["Label", "Text"])
 
@@ -245,5 +270,21 @@ logits = outputs[:, -1, :]
 label = torch.argmax(logits, dim=-1)
 print("클래스 레이블:", label.item())
 
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+# elif torch.backends.mps.is_available():
+#     device = torch.device("mps")
+else:
+    device = torch.device("cpu")
+model.to(device)
+
+torch.manual_seed(123)
+train_accuracy = calc_accuracy_loader(train_loader, model, device, num_batches=10)
+val_accuracy = calc_accuracy_loader(val_loader, model, device, num_batches=10)
+test_accuracy = calc_accuracy_loader(test_loader, model, device, num_batches=10)
+
+print(f"훈련 정확도: {train_accuracy * 100:.2f}%")
+print(f"검증 정확도: {val_accuracy * 100:.2f}%")
+print(f"테스트 정확도: {test_accuracy * 100:.2f}%")
 
 # 연습문제 6.2와 6.3도 해야함.
