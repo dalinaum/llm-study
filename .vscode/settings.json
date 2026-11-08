@@ -7,5 +7,9 @@
   "code-runner.ignoreSelection": true,
   "code-runner.showRunIconInEditorTitleMenu": true,
   "python.terminal.activateEnvironment": false,
-  "python.terminal.activateEnvInCurrentTerminal": false
+  "python.terminal.activateEnvInCurrentTerminal": false,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  }
 }

@@ -8,6 +8,12 @@ import tiktoken
 import torch
 from torch.utils.data import DataLoader, Dataset
 
+from generate_text_simple import generate_text_simple
+from gpt_download import download_and_load_gpt2
+from gpt_load_helper import load_weights_into_gpt
+from gpt_model import GPTModel
+from token_util import text_to_token_ids, token_ids_to_text
+
 url = "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip"
 zip_path = "sms_spam_collections.zip"
 extracted_path = "sms_spam_collection"
@@ -170,3 +176,32 @@ model_configs = {
     "gpt2-xl (1558M)": {"emb_dim": 1600, "n_layers": 48, "n_heads": 25},
 }
 BASE_CONFIG.update(model_configs[CHOOSE_MODEL])
+
+model_size = CHOOSE_MODEL.split(" ")[-1].lstrip("(").rstrip(")")
+settings, params = download_and_load_gpt2(model_size=model_size, models_dir="gpt2")
+
+model = GPTModel(BASE_CONFIG)
+load_weights_into_gpt(model, params)
+model.eval()
+
+text_1 = "Every effort moves you"
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(text_1, tokenizer),
+    max_new_tokens=15,
+    context_size=BASE_CONFIG["context_length"],
+)
+print(token_ids_to_text(token_ids, tokenizer))
+
+text_2 = (
+    "Is the following text 'spam'? Answer with 'yes' or 'no':"
+    " 'You are a winner you have been specially"
+    " selected to receive $1000 cash or a $2000 award.'"
+)
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(text_2, tokenizer),
+    max_new_tokens=23,
+    context_size=BASE_CONFIG["context_length"],
+)
+print(token_ids_to_text(token_ids, tokenizer))
