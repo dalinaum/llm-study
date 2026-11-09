@@ -120,6 +120,31 @@ def calc_accuracy_loader(data_loader, model, device, num_batches=None):
     return correct_predictions / num_examples
 
 
+def calc_loss_batch(input_batch, target_batch, model, device):
+    input_batch = input_batch.to(device)
+    target_batch = target_batch.to(device)
+    logits = model(input_batch)[:, -1, :]
+    loss = torch.nn.functional.cross_entropy(logits, target_batch)
+    return loss
+
+
+def calc_loss_loader(data_loader, model, device, num_batches=None):
+    total_loss = 0
+    if len(data_loader) == 0:
+        return float("nan")
+    elif num_batches is None:
+        num_batches = len(data_loader)
+    else:
+        num_batches = min(num_batches, len(data_loader))
+    for i, (input_batch, target_batch) in enumerate(data_loader):
+        if i < num_batches:
+            loss = calc_loss_batch(input_batch, target_batch, model, device)
+            total_loss += loss.item()
+        else:
+            break
+    return total_loss / num_batches
+
+
 download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path)
 df = pd.read_csv(data_file_path, sep="\t", header=None, names=["Label", "Text"])
 
@@ -286,5 +311,13 @@ test_accuracy = calc_accuracy_loader(test_loader, model, device, num_batches=10)
 print(f"훈련 정확도: {train_accuracy * 100:.2f}%")
 print(f"검증 정확도: {val_accuracy * 100:.2f}%")
 print(f"테스트 정확도: {test_accuracy * 100:.2f}%")
+
+with torch.no_grad():
+    train_loss = calc_loss_loader(train_loader, model, device, num_batches=5)
+    val_loss = calc_loss_loader(val_loader, model, device, num_batches=5)
+    test_loss = calc_loss_loader(test_loader, model, device, num_batches=5)
+print(f"훈련 손실: {train_loss:.3f}")
+print(f"검증 손실: {val_loss:.3f}")
+print(f"테스트 손실: {test_loss:.3f}")
 
 # 연습문제 6.2와 6.3도 해야함.
