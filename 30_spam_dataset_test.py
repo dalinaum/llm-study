@@ -414,6 +414,18 @@ print(f"{execution_time_minutes:.2f} 분에 학습을 완료했습니다.")
 # 여기서는 편의상 학습 구간을 균등하게 나누며, 실제 평가 시점을 기록한 좌표와는 차이가 있다.
 epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
 examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
-
 plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses)
+
+epochs_tensor = torch.linspace(0, num_epochs, len(train_accs))
+examples_seen_tensor = torch.linspace(0, examples_seen, len(train_accs))
+plot_values(epochs_tensor, examples_seen_tensor, train_accs, val_accs, label="정확도")
+
+train_accuracy = calc_accuracy_loader(train_loader, model, device)
+val_accuracy = calc_accuracy_loader(val_loader, model, device)
+test_accuracy = calc_accuracy_loader(test_loader, model, device)
+
+print(f"훈련 정확도: {train_accuracy * 100:.2f}%")
+print(f"검증 정확도: {val_accuracy * 100:.2f}%")
+print(f"테스트 정확도: {test_accuracy * 100:.2f}%")
+
 # 연습문제 6.2와 6.3도 해야함.
