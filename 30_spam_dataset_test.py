@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import tiktoken
 import torch
+from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader, Dataset
 
 from generate_text_simple import generate_text_simple
@@ -53,10 +54,10 @@ def random_split(df, train_frac, validation_frac):
     validation_end = train_end + int(len(df) * validation_frac)
 
     train_df = df[:train_end]
-    validatation_df = df[train_end:validation_end]
+    validation_df = df[train_end:validation_end]
     test_df = df[validation_end:]
 
-    return train_df, validatation_df, test_df
+    return train_df, validation_df, test_df
 
 
 class SpamDataset(Dataset):
@@ -142,7 +143,7 @@ def train_classifier_simple(
     eval_iter,
 ):
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
-    example_seen, global_step = 0, -1
+    examples_seen, global_step = 0, -1
 
     for epoch in range(num_epochs):
         model.train()
@@ -152,7 +153,7 @@ def train_classifier_simple(
             loss = calc_loss_batch(input_batch, target_batch, model, device)
             loss.backward()
             optimizer.step()
-            example_seen += input_batch.shape[0]
+            examples_seen += input_batch.shape[0]
             global_step += 1
 
             if global_step % eval_freq == 0:
@@ -184,7 +185,29 @@ def train_classifier_simple(
         train_accs.append(train_accuracy)
         val_accs.append(val_accuracy)
 
-    return train_losses, val_losses, train_accs, val_accs, example_seen
+    return train_losses, val_losses, train_accs, val_accs, examples_seen
+
+
+def plot_values(epochs_seen, examples_seen, train_values, val_values, label="손실"):
+    # 이 Mac의 한글 폰트를 사용하고, 없는 기호는 DejaVu Sans로 보완한다.
+    plt.rcParams["font.family"] = ["AppleGothic", "DejaVu Sans"]
+    fig, ax1 = plt.subplots(figsize=(5, 3))
+
+    ax1.plot(epochs_seen, train_values, label=f"학습 {label}")
+    ax1.plot(epochs_seen, val_values, linestyle="-.", label=f"검증 {label}")
+    ax1.set_xlabel("에포크")
+    ax1.set_ylabel(label.capitalize())
+    ax1.legend()
+
+    ax2 = ax1.twiny()
+    ax2.plot(
+        examples_seen, train_values, alpha=0
+    )  # 틱 얼라이닝을 위한 보이지 않는 플롯
+    ax2.set_xlabel("학습한 샘플 수")
+
+    fig.tight_layout()
+    plt.savefig(f"{label}-plot.pdf")
+    plt.show()
 
 
 download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path)
@@ -254,7 +277,7 @@ print(f"{len(val_loader)}개 검증 배치")
 print(f"{len(test_loader)}개 테스트 배치")
 
 CHOOSE_MODEL = "gpt2-small (124M)"
-INPUT_PROMPT = "Every effor moves"
+INPUT_PROMPT = "Every effort moves"
 BASE_CONFIG = {
     "vocab_size": 50257,
     "context_length": 1024,
@@ -373,7 +396,7 @@ torch.manual_seed(123)
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.1)
 num_epochs = 5
 
-train_losses, val_losses, train_accs, val_accs, example_seen = train_classifier_simple(
+train_losses, val_losses, train_accs, val_accs, examples_seen = train_classifier_simple(
     model,
     train_loader,
     val_loader,
@@ -387,4 +410,10 @@ end_time = time.time()
 execution_time_minutes = (end_time - start_time) / 60
 print(f"{execution_time_minutes:.2f} 분에 학습을 완료했습니다.")
 
+# x축 좌표는 손실값과 같은 길이의 리스트나 NumPy 배열도 가능하므로 텐서/linspace가 필수는 아니다.
+# 여기서는 편의상 학습 구간을 균등하게 나누며, 실제 평가 시점을 기록한 좌표와는 차이가 있다.
+epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
+examples_seen_tensor = torch.linspace(0, examples_seen, len(train_losses))
+
+plot_values(epochs_tensor, examples_seen_tensor, train_losses, val_losses)
 # 연습문제 6.2와 6.3도 해야함.
