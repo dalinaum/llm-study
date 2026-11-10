@@ -381,7 +381,7 @@ train_losses, val_losses, train_accs, val_accs, example_seen = train_classifier_
     device,
     num_epochs=num_epochs,
     eval_freq=50,
-    eval_iter=50,
+    eval_iter=5,
 )
 end_time = time.time()
 execution_time_minutes = (end_time - start_time) / 60
