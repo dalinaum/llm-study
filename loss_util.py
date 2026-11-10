@@ -11,7 +11,10 @@ def calc_loss_batch(input_batch, target_batch, model, device):
     return loss
 
 
-def calc_loss_loader(data_loader, model, device, num_batches=None):
+def calc_loss_loader(
+    data_loader, model, device, num_batches=None, *, loss_batch_fn=calc_loss_batch
+):
+    """배치 손실 함수를 사용해 로더의 평균 손실을 계산한다."""
     total_loss = 0
     if len(data_loader) == 0:
         return float("nan")
@@ -21,7 +24,7 @@ def calc_loss_loader(data_loader, model, device, num_batches=None):
         num_batches = min(num_batches, len(data_loader))
     for i, (input_batch, target_batch) in enumerate(data_loader):
         if i < num_batches:
-            loss = calc_loss_batch(input_batch, target_batch, model, device)
+            loss = loss_batch_fn(input_batch, target_batch, model, device)
             total_loss += loss.item()
         else:
             break

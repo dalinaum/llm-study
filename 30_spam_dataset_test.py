@@ -1,4 +1,5 @@
 import os
+import time
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -12,7 +13,9 @@ from generate_text_simple import generate_text_simple
 from gpt_download import download_and_load_gpt2
 from gpt_load_helper import load_weights_into_gpt
 from gpt_model import GPTModel
+from loss_util import calc_loss_loader
 from token_util import text_to_token_ids, token_ids_to_text
+from train_util import evaluate_model
 
 url = "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip"
 zip_path = "sms_spam_collections.zip"
@@ -128,21 +131,60 @@ def calc_loss_batch(input_batch, target_batch, model, device):
     return loss
 
 
-def calc_loss_loader(data_loader, model, device, num_batches=None):
-    total_loss = 0
-    if len(data_loader) == 0:
-        return float("nan")
-    elif num_batches is None:
-        num_batches = len(data_loader)
-    else:
-        num_batches = min(num_batches, len(data_loader))
-    for i, (input_batch, target_batch) in enumerate(data_loader):
-        if i < num_batches:
+def train_classifier_simple(
+    model,
+    train_loader,
+    val_loader,
+    optimizer,
+    device,
+    num_epochs,
+    eval_freq,
+    eval_iter,
+):
+    train_losses, val_losses, train_accs, val_accs = [], [], [], []
+    example_seen, global_step = 0, -1
+
+    for epoch in range(num_epochs):
+        model.train()
+
+        for input_batch, target_batch in train_loader:
+            optimizer.zero_grad()
             loss = calc_loss_batch(input_batch, target_batch, model, device)
-            total_loss += loss.item()
-        else:
-            break
-    return total_loss / num_batches
+            loss.backward()
+            optimizer.step()
+            example_seen += input_batch.shape[0]
+            global_step += 1
+
+            if global_step % eval_freq == 0:
+                train_loss, val_loss = evaluate_model(
+                    model,
+                    train_loader,
+                    val_loader,
+                    device,
+                    eval_iter,
+                    loss_batch_fn=calc_loss_batch,
+                )
+                train_losses.append(train_loss)
+                val_losses.append(val_loss)
+                print(
+                    f"에포크 {epoch + 1} (단계: {global_step:06d}): "
+                    f"학습 손실 {train_loss:.3f}, "
+                    f"검증 손실 {val_loss:.3f}"
+                )
+
+        train_accuracy = calc_accuracy_loader(
+            train_loader, model, device, num_batches=eval_iter
+        )
+        val_accuracy = calc_accuracy_loader(
+            val_loader, model, device, num_batches=eval_iter
+        )
+
+        print(f"학습 정확도: {train_accuracy * 100:.2f}% | ", end="")
+        print(f"검증 정확도: {val_accuracy * 100:.2f}%")
+        train_accs.append(train_accuracy)
+        val_accs.append(val_accuracy)
+
+    return train_losses, val_losses, train_accs, val_accs, example_seen
 
 
 download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path)
@@ -313,11 +355,36 @@ print(f"검증 정확도: {val_accuracy * 100:.2f}%")
 print(f"테스트 정확도: {test_accuracy * 100:.2f}%")
 
 with torch.no_grad():
-    train_loss = calc_loss_loader(train_loader, model, device, num_batches=5)
-    val_loss = calc_loss_loader(val_loader, model, device, num_batches=5)
-    test_loss = calc_loss_loader(test_loader, model, device, num_batches=5)
+    train_loss = calc_loss_loader(
+        train_loader, model, device, num_batches=5, loss_batch_fn=calc_loss_batch
+    )
+    val_loss = calc_loss_loader(
+        val_loader, model, device, num_batches=5, loss_batch_fn=calc_loss_batch
+    )
+    test_loss = calc_loss_loader(
+        test_loader, model, device, num_batches=5, loss_batch_fn=calc_loss_batch
+    )
 print(f"훈련 손실: {train_loss:.3f}")
 print(f"검증 손실: {val_loss:.3f}")
 print(f"테스트 손실: {test_loss:.3f}")
+
+start_time = time.time()
+torch.manual_seed(123)
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.1)
+num_epochs = 5
+
+train_losses, val_losses, train_accs, val_accs, example_seen = train_classifier_simple(
+    model,
+    train_loader,
+    val_loader,
+    optimizer,
+    device,
+    num_epochs=num_epochs,
+    eval_freq=50,
+    eval_iter=50,
+)
+end_time = time.time()
+execution_time_minutes = (end_time - start_time) / 60
+print(f"{execution_time_minutes:.2f} 분에 학습을 완료했습니다.")
 
 # 연습문제 6.2와 6.3도 해야함.

@@ -5,13 +5,26 @@ from loss_util import calc_loss_batch, calc_loss_loader
 from token_util import text_to_token_ids, token_ids_to_text
 
 
-def evaluate_model(model, train_loader, val_loader, device, eval_iter):
+def evaluate_model(
+    model, train_loader, val_loader, device, eval_iter, *, loss_batch_fn=calc_loss_batch
+):
+    """지정한 배치 손실 함수로 훈련·검증 손실을 평가한다."""
     model.eval()
     with torch.no_grad():
         train_loss = calc_loss_loader(
-            train_loader, model, device, num_batches=eval_iter
+            train_loader,
+            model,
+            device,
+            num_batches=eval_iter,
+            loss_batch_fn=loss_batch_fn,
         )
-        val_loss = calc_loss_loader(val_loader, model, device, num_batches=eval_iter)
+        val_loss = calc_loss_loader(
+            val_loader,
+            model,
+            device,
+            num_batches=eval_iter,
+            loss_batch_fn=loss_batch_fn,
+        )
     model.train()
     return train_loss, val_loss
 
