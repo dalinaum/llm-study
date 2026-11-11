@@ -210,6 +210,32 @@ def plot_values(epochs_seen, examples_seen, train_values, val_values, label="손
     plt.show()
 
 
+def classify_review(
+    text, model, tokenizer, device, max_length=None, pad_token_id=50256
+):
+    """메시지 하나를 분류한다. max_length에는 학습 때 사용한 길이를 전달한다."""
+    model.eval()
+
+    input_ids = tokenizer.encode(text)
+    supported_context_length = model.pos_emb.weight.shape[0]
+
+    if max_length is None:
+        max_length = supported_context_length
+    else:
+        max_length = min(max_length, supported_context_length)
+    input_ids = input_ids[:max_length]
+    # 지정한 길이까지 학습 데이터와 같은 토큰으로 패딩한다.
+    input_ids += [pad_token_id] * (max_length - len(input_ids))
+
+    input_tensor = torch.tensor(input_ids, dtype=torch.long, device=device).unsqueeze(0)
+
+    with torch.no_grad():
+        logits = model(input_tensor)[:, -1, :]
+    predicted_label = torch.argmax(logits, dim=-1).item()
+
+    return "spam" if predicted_label == 1 else "not spam"
+
+
 download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path)
 df = pd.read_csv(data_file_path, sep="\t", header=None, names=["Label", "Text"])
 
@@ -410,6 +436,10 @@ end_time = time.time()
 execution_time_minutes = (end_time - start_time) / 60
 print(f"{execution_time_minutes:.2f} 분에 학습을 완료했습니다.")
 
+# 학습을 마친 가중치를 그래프 표시 전에 저장한다.
+checkpoint_path = Path("review_classifier.pth")
+torch.save(model.state_dict(), checkpoint_path)
+
 # x축 좌표는 손실값과 같은 길이의 리스트나 NumPy 배열도 가능하므로 텐서/linspace가 필수는 아니다.
 # 여기서는 편의상 학습 구간을 균등하게 나누며, 실제 평가 시점을 기록한 좌표와는 차이가 있다.
 epochs_tensor = torch.linspace(0, num_epochs, len(train_losses))
@@ -427,5 +457,31 @@ test_accuracy = calc_accuracy_loader(test_loader, model, device)
 print(f"훈련 정확도: {train_accuracy * 100:.2f}%")
 print(f"검증 정확도: {val_accuracy * 100:.2f}%")
 print(f"테스트 정확도: {test_accuracy * 100:.2f}%")
+
+text_1 = (
+    "You are a winner you have been specially"
+    " selected to receive $1000 cash or a $2000 award."
+)
+
+print(
+    classify_review(
+        text_1, model, tokenizer, device, max_length=train_dataset.max_length
+    )
+)
+
+text_2 = (
+    "Hey, just wanted to check if we're still on"
+    " for dinner tonight? Let me know!"
+)
+
+print(
+    classify_review(
+        text_2, model, tokenizer, device, max_length=train_dataset.max_length
+    )
+)
+
+# 저장한 가중치를 현재 분류 모델 구조에 다시 불러오는 예제다.
+model_state_dict = torch.load(checkpoint_path, map_location=device, weights_only=True)
+model.load_state_dict(model_state_dict)
 
 # 연습문제 6.2와 6.3도 해야함.
